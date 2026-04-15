@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React 영화 아카이브</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React 18 & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    <!-- Babel Standalone (JSX 컴파일용) -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- 커스텀 스타일 (부드러운 전환 효과용) -->
+    <style>
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+
+    <!-- React 앱이 마운트될 루트 DOM -->
+    <div id="root"></div>
+
+    <!-- React 로직 (Babel을 통해 변환됨) -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ----------------------------------------
+        // 1. MovieCard 컴포넌트 (영화 목록 카드)
+        // ----------------------------------------
+        const MovieCard = ({ movie, onClick }) => {
+            return (
+                <div
+                    onClick={() => onClick(movie)}
+                    className="bg-slate-800 rounded-2xl overflow-hidden shadow-lg cursor-pointer transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/50 border border-slate-700 flex flex-col"
+                >
+                    <img
+                        src={movie.poster || `./images/${movie.id}1.jpg`}
+                        alt={movie.title}
+                        className="w-full h-96 object-cover"
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x600?text=No+Image'; }}
+                    />
+                    <div className="p-6 flex flex-col flex-grow bg-gradient-to-b from-slate-800 to-slate-900">
+                        <h2 className="text-xl font-bold text-white mb-3 leading-tight">{movie.title}</h2>
+                        <p className="text-slate-400 text-sm line-clamp-3 leading-relaxed">
+                            {movie.synopsis}
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ----------------------------------------
+        // 2. MovieDetail 컴포넌트 (상세 페이지)
+        // ----------------------------------------
+        const MovieDetail = ({ movie, onBack }) => {
+            // 이미지 확장자 폴백(Fallback) 로직: jpg -> png -> webp -> 숨김 처리
+            const handleImageError = (e, id, num) => {
+                const img = e.target;
+                const currentExt = img.dataset.ext || 'jpg';
+
+                if (currentExt === 'jpg') {
+                    img.dataset.ext = 'png';
+                    img.src = `./images/${id}${num}.png`;
+                } else if (currentExt === 'png') {
+                    img.dataset.ext = 'webp';
+                    img.src = `./images/${id}${num}.webp`;
+                } else {
+                    img.style.display = 'none'; // 모든 확장자가 없으면 숨김
+                }
+            };
+
+            return (
+                <div className="fade-in max-w-5xl mx-auto">
+                    {/* 뒤로 가기 버튼 */}
+                    <button
+                        onClick={onBack}
+                        className="mb-8 flex items-center text-slate-400 hover:text-white transition-colors group font-semibold"
+                    >
+                        <svg className="w-6 h-6 mr-2 transform group-hover:-translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        목록으로 돌아가기
+                    </button>
+
+                    {/* 상세 정보 컨테이너 */}
+                    <div className="bg-slate-800 rounded-3xl p-8 md:p-10 shadow-2xl border border-slate-700">
+                        <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-8 tracking-tight">{movie.title}</h1>
+
+                        <div className="mb-12 text-slate-300 text-lg leading-relaxed whitespace-pre-line bg-slate-900/50 p-8 rounded-2xl border border-slate-700/50">
+                            {movie.synopsis}
+                        </div>
+
+                        <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                            <span className="bg-blue-500 w-1.5 h-6 rounded-full mr-3"></span>
+                            스틸컷 갤러리
+                        </h3>
+
+                        {/* 이미지 갤러리 (1번부터 9번까지 렌더링) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                                <img
+                                    key={num}
+                                    src={`./images/${movie.id}${num}.jpg`}
+                                    data-ext="jpg"
+                                    alt={`${movie.title} 갤러리 ${num}`}
+                                    className="w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 bg-slate-900"
+                                    onError={(e) => handleImageError(e, movie.id, num)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ----------------------------------------
+        // 3. App 컴포넌트 (최상위 부모)
+        // ----------------------------------------
+        const App = () => {
+            const [movies, setMovies] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
+            // selectedMovie가 null이면 목록, 값이 있으면 상세 페이지 렌더링
+            const [selectedMovie, setSelectedMovie] = useState(null);
+
+            useEffect(() => {
+                // data.json 비동기 호출
+                fetch('data.json')
+                    .then(res => {
+                        if (!res.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
+                        return res.json();
+                    })
+                    .then(data => {
+                        setMovies(data);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        setError(err.message);
+                        setLoading(false);
+                    });
+            }, []);
+
+            return (
+                <div className="container mx-auto px-4 py-12 max-w-7xl">
+                    <header className="mb-14 text-center">
+                        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-tight cursor-pointer" onClick={() => setSelectedMovie(null)}>
+                            🍿 무비 갤러리
+                        </h1>
+                    </header>
+
+                    {/* 로딩 상태 UI */}
+                    {loading && (
+                        <div className="flex flex-col justify-center items-center h-64 fade-in">
+                            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+                            <span className="text-xl text-slate-400 font-semibold">데이터를 불러오는 중...</span>
+                        </div>
+                    )}
+
+                    {/* 에러 상태 UI */}
+                    {error && (
+                        <div className="bg-red-900/30 border border-red-500/50 text-red-200 p-6 rounded-2xl text-center fade-in">
+                            <p className="text-lg font-bold mb-2">⚠️ {error}</p>
+                            <p className="text-sm text-red-300">index.html과 같은 폴더에 <code className="bg-red-950 px-2 py-1 rounded">data.json</code> 파일이 존재하는지 확인해 주세요.</p>
+                        </div>
+                    )}
+
+                    {/* 데이터 로딩 완료 후 화면 (조건부 렌더링) */}
+                    {!loading && !error && (
+                        selectedMovie ? (
+                            <MovieDetail movie={selectedMovie} onBack={() => setSelectedMovie(null)} />
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
+                                {movies.map(movie => (
+                                    <MovieCard
+                                        key={movie.id}
+                                        movie={movie}
+                                        onClick={setSelectedMovie}
+                                    />
+                                ))}
+                            </div>
+                        )
+                    )}
+                </div>
+            );
+        };
+
+        // React 앱 렌더링
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
