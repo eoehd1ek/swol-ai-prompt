@@ -1,0 +1,42 @@
+React CDN 기반 웹 페이지 생성 프롬프트
+제공된 data.json 구조를 바탕으로, 별도의 빌드 과정 없이 브라우저에서 즉시 실행 가능한 단일 HTML 파일을 만들어줘.
+
+1. 기술 스택 및 환경 설정
+
+React: unpkg.com의 React 18 (development) 및 react-dom 사용.
+
+Babel: JSX 문법 해석을 위한 babel-standalone 포함.
+
+CSS: tailwindcss CDN 사용.
+
+구조: <script type="text/babel"> 내부에 모든 React 로직을 작성.
+
+2. 상세 기능 요구사항
+
+데이터 로딩: * fetch('data.json')를 사용하여 데이터를 비동기로 불러오고, useState와 useEffect를 통해 관리해줘.
+
+데이터를 불러오는 동안 "로딩 중..." 메시지를 보여줘.
+
+상태 관리 (Routing 대체):
+
+selectedMovie라는 상태를 만들어서, 값이 null이면 **영화 목록(Card Board)**을 보여주고, 값이 있으면 **상세 페이지(Detail View)**를 보여주는 조건부 렌더링 구조로 작성해줘.
+
+컴포넌트 설계:
+
+App: 전체 상태 관리 및 레이아웃.
+
+MovieCard: 영화 목록의 개별 항목. 클릭 시 selectedMovie 상태를 변경.
+
+MovieDetail: 영화 상세 정보 및 이미지 갤러리. "뒤로가기" 버튼 포함.
+
+이미지 로직:
+
+상세 페이지에서는 /images/{id}1.jpg부터 /images/{id}9.jpg (및 .png, .webp) 경로의 이미지를 출력해.
+
+onError 이벤트를 사용하여 존재하지 않는 이미지 경로는 화면에서 자동으로 숨겨지게 처리해줘.
+
+3. 디자인 가이드
+
+전체적으로 어두운 테마(bg-slate-900)를 사용하고, 카드는 세련된 다크 모드 UI로 디자인해줘.
+
+모든 요소는 Tailwind CSS 클래스만 사용하여 스타일링해줘.
